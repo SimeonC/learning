@@ -51,12 +51,16 @@ function amendPropTypes(documentation, path) {
         utils.getPropertyName(propertyPath)
       );
       valuePath = propertyPath.get('value');
-      type = isPropTypesExpression(valuePath)
-        ? utils.getPropType(valuePath)
-        : {
-          name: 'custom',
-          raw: utils.printValue(valuePath)
-        };
+      if (valuePath.value && valuePath.value.type === types.Identifier.name) {
+        type = utils.getPropType(utils.resolveToValue(valuePath.get('value')));
+      } else {
+        type = isPropTypesExpression(valuePath)
+          ? utils.getPropType(valuePath)
+          : {
+              name: 'custom',
+              raw: utils.printValue(valuePath)
+            };
+      }
       if (type) {
         propDescriptor.type = type;
         propDescriptor.required =
@@ -148,7 +152,7 @@ function getIdentifiers(ast) {
   recast.visit(ast, {
     visitVariableDeclarator(path) {
       const node = path.node;
-      const nodeType = node.init.type;
+      const nodeType = (node.init || {}).type;
 
       if (nodeType === types.Identifier.name) {
         if (identifiers[node.init.name]) {
